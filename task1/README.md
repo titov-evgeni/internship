@@ -19,7 +19,7 @@ in the 'Top' -> 'This Month' category.**
 
 - **project folder** for Windows:
 
-		  move chromedriver.exe PATH\project
+		move chromedriver.exe PATH\project
 
 **4. Move to the project folder**  
 
@@ -30,7 +30,7 @@ in the 'Top' -> 'This Month' category.**
 
 - for Windows:
 
-		  pip install venv
+		pip install venv
 **6. Create virtual environment:**
 - for Linux:
 
@@ -38,7 +38,7 @@ in the 'Top' -> 'This Month' category.**
 
 - for Windows:
 
-		  python -m venv my_env
+		python -m venv my_env
 **6. Activate virtual environment:**
 - for Linux:
 

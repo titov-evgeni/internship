@@ -29,12 +29,13 @@ logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',
 
 COUNT_POSTS = 100
 MAX_WAIT = 15
+GOOD_SCROLL_COUNT = 20
 USER_AGENT = ("Mozilla/5.0 (Windows NT 6.3; Win64; x64)"
               "AppleWebKit/537.36 (KHTML, like Gecko)"
               "Chrome/92.0.4515.159 Safari/537.36")
 
 
-def search_and_del_file(search_mask: str):
+def search_and_del_file_in_current_directory(search_mask: str):
     """Find file by mask and delete it"""
     file_list = glob.glob(search_mask)
     if file_list:
@@ -45,7 +46,7 @@ def search_and_del_file(search_mask: str):
 def make_request_selenium(url: str):
     """Make GET request and return object: WebDriver
 
-    Make GET request by reference using 'Сhrome'.
+    Make GET request by link using 'Сhrome'.
     Return object: 'selenium.webdriver.chrome.webdriver.WebDriver'
     """
     try:
@@ -77,7 +78,7 @@ def make_request_selenium(url: str):
         sys.exit()
 
 
-def make_scroll(driver: WebDriver, scroll_number: int):
+def make_scroll_on_page(driver: WebDriver, scroll_number: int):
     """Make scroll on page
 
     Find element 'body' on page and make scroll.
@@ -97,14 +98,12 @@ def make_scroll(driver: WebDriver, scroll_number: int):
 def make_request_beautifulsoup(url: str):
     """Make GET request and return processed HTML
 
-    Make GET request by reference using 'BeautifulSoup'.
+    Make GET request by link using 'BeautifulSoup'.
     Write page HTML in file, read file.
     Return page HTML processed with library "lxml"
     """
     try:
-        headers = {
-            "User-Agent": f"{USER_AGENT}"
-        }
+        headers = {"User-Agent": f"{USER_AGENT}"}
         req = requests.get(url, headers=headers, timeout=MAX_WAIT)
         src = req.text
 
@@ -119,13 +118,13 @@ def make_request_beautifulsoup(url: str):
         logging.error(ex)
 
 
-def search_post_href(driver: WebDriver):
-    """Find references on posts and return list of them
+def search_post_href_in_page_html(driver: WebDriver):
+    """Find posts links and return list of them
 
     Process HTML from 'selenium' with library 'lxml'
     Find all elements 'a' by 'class name' and get attribute 'href' from them.
     Add post_url in list.
-    Return page HTML processed with library "lxml"
+    Return posts urls list
     Script stops if list is empty
     """
     try:
@@ -162,21 +161,19 @@ def convert_unix_time(unix_post_date: int):
     return post_date
 
 
-def get_data(url: str):
+def get_data_from_site(url: str):
     """Get data from page and return file with data"""
     count_records = 0
-    scroll_number = round(COUNT_POSTS * 1.5)
+    scroll_count = COUNT_POSTS if COUNT_POSTS <= 25 else GOOD_SCROLL_COUNT
     now = datetime.datetime.now().strftime('%Y%m%d%H%M')
     posts_urls_done = []
 
-    search_and_del_file('reddit*')
+    search_and_del_file_in_current_directory('reddit*')
 
     driver = make_request_selenium(url)
-    make_scroll(driver, scroll_number)
+    make_scroll_on_page(driver, scroll_count)
 
-    posts_urls = search_post_href(driver)
-    driver.close()
-    driver.quit()
+    posts_urls = search_post_href_in_page_html(driver)
 
     while count_records < COUNT_POSTS:
         for post_url in posts_urls:
@@ -243,16 +240,13 @@ def get_data(url: str):
                 count_records += 1
 
             if count_records == COUNT_POSTS:
-                search_and_del_file("*.html")
+                search_and_del_file_in_current_directory("*.html")
+                driver.close()
+                driver.quit()
                 return False
 
-        driver = make_request_selenium(url)
-        scroll_number += COUNT_POSTS
-        make_scroll(driver, scroll_number)
-
-        next_posts_urls = search_post_href(driver)
-        driver.close()
-        driver.quit()
+        make_scroll_on_page(driver, scroll_count)
+        next_posts_urls = search_post_href_in_page_html(driver)
 
         # Select urls for which there was no request
         new_posts_urls = [x for x in next_posts_urls
@@ -260,4 +254,4 @@ def get_data(url: str):
         posts_urls = new_posts_urls
 
 
-get_data("https://www.reddit.com/top/?t=month")
+get_data_from_site("https://www.reddit.com/top/?t=month")
