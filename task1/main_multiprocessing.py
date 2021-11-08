@@ -15,6 +15,7 @@ import json
 import time
 import datetime
 import multiprocessing
+import argparse
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -28,7 +29,17 @@ from selenium.webdriver.support import expected_conditions as ec
 logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-COUNT_POSTS = 100
+parser = argparse.ArgumentParser(description='Posts data from reddit '
+                                             'to txt file')
+parser.add_argument('--posts_number', type=int,
+                    default=100,
+                    help='Required number of posts')
+parser.add_argument('--file_name', type=str,
+                    default=datetime.datetime.now().strftime('%Y%m%d%H%M'),
+                    help='Name of the output file')
+args = parser.parse_args()
+
+COUNT_POSTS = args.posts_number
 MAX_WAIT = 15
 GOOD_SCROLL_COUNT = 20
 USER_AGENT = ("Mozilla/5.0 (Windows NT 6.3; Win64; x64)"
@@ -128,9 +139,10 @@ def make_request_selenium(url: str):
             return driver
         except (AssertionError, WebDriverException):
             raise Exception
-
     except Exception as ex:
         logging.error(ex)
+        driver.close()
+        driver.quit()
         sys.exit()
 
 
@@ -148,6 +160,8 @@ def make_scroll_on_page(driver: WebDriver, scrolls: int):
             time.sleep(0.5)
     except Exception as ex:
         logging.error(ex)
+        driver.close()
+        driver.quit()
         sys.exit()
 
 
@@ -193,6 +207,8 @@ def search_post_href_in_page_html(driver: WebDriver):
             raise Exception
     except Exception as ex:
         logging.error(ex)
+        driver.close()
+        driver.quit()
         sys.exit()
 
 
@@ -219,7 +235,6 @@ def convert_unix_time(unix_post_date: int):
 
 
 if __name__ == '__main__':
-    now = datetime.datetime.now().strftime('%Y%m%d%H%M')
     site_url = "https://www.reddit.com/top/?t=month"
     count_records = 0
     posts_urls_done = []
@@ -236,7 +251,8 @@ if __name__ == '__main__':
             all_posts_data = process.map(get_data_from_post_and_user_page,
                                          all_posts_urls)
 
-            with open(f"reddit-{now}.txt", "a", encoding="utf-8-sig") as file:
+            with open(f"reddit-{args.file_name}.txt", "a",
+                      encoding="utf-8-sig") as file:
                 for post_data in all_posts_data:
                     if post_data:
                         file.write(';'.join(post_data) + "\n")
