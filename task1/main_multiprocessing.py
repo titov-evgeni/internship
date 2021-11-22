@@ -146,11 +146,11 @@ def make_request_selenium(url: str):
                 ec.presence_of_element_located((By.TAG_NAME, "body")))
             return driver
         except (AssertionError, WebDriverException):
+            driver.close()
+            driver.quit()
             raise Exception
     except Exception as ex:
         logging.error(ex)
-        driver.close()
-        driver.quit()
         sys.exit()
 
 
