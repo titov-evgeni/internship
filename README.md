@@ -44,7 +44,8 @@ in the 'Top' -> 'This Month' category.**
 
 - for Windows:
 
-		python -m venv my_env
+        python -m venv my_env
+
 **9. Activate virtual environment:**
 - for Linux:
 
@@ -53,19 +54,20 @@ in the 'Top' -> 'This Month' category.**
 - for Windows:
 
         my_env\Scripts\activate.bat
+
 **10. Install requirements:**
 
         pip install -r requirements.txt
 
 **11. Run RESTful server:**
 
-        python task1/server.py
+        python task3/server.py
 
 **12. Repeat the steps 6, 9**
 
 **13. Run script:**
 
-        python task1/main_multiprocessing.py
+        python task3/main_multiprocessing.py
 
 **14. Stop RESTful server (Ctrl+C) in appropriate terminal window**
 

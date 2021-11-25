@@ -4,7 +4,7 @@ from typing import Union, List
 from bson.objectid import ObjectId
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from mongo import MongodbService
+from db_connectors.mongo import MongodbService
 
 mongo = MongodbService()
 db = mongo.create_db('PostsData')

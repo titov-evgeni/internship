@@ -25,7 +25,7 @@ from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
-from mongo import MongodbService
+from db_connectors.mongo import MongodbService
 
 
 logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',
