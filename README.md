@@ -30,7 +30,8 @@ in the 'Top' -> 'This Month' category.**
 
 - for Windows:
 
-		pip install venv
+        pip install venv
+
 **6. Create virtual environment:**
 - for Linux:
 
@@ -47,13 +48,15 @@ in the 'Top' -> 'This Month' category.**
 - for Windows:
 
         my_env\Scripts\activate.bat
+
 **6. Install requirements:**
 
         pip install -r requirements.txt
 
 **6. Run script:**
 
-        python main.py
+        python task1/main_multiprocessing.py
+
 **6. Deactivate virtual environment:**
 - for Linux:
 
