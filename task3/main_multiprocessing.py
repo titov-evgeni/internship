@@ -1,9 +1,8 @@
 """
 Get data from the site www.reddit.com on posts
 in the 'Top' -> 'This Month' category.
-Add data into text file named reddit-YYYYMMDDHHMM.txt
+Write down data into data base through RESTful API
 """
-
 import sys
 import os.path
 import glob
@@ -25,6 +24,9 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+
+from db_connectors.postgres import PostgreService
+from config import user, password
 
 logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -97,7 +99,7 @@ def get_data_from_post_and_user_page(url: str):
                                  [f'{user_id}']['created'])
         user_cake_day = convert_unix_time(int(unix_user_cake_day))
 
-        all_data = {"UNIQUE_ID": unique_id,
+        all_data = {"id": unique_id,
                     "post_url": post_url,
                     "user_name": user_name,
                     "user_karma": user_karma,
@@ -135,10 +137,8 @@ def make_request_selenium(url: str):
 
         # Output only fatal error in console
         options.add_argument("--log-level=3")
-
         driver = webdriver.Chrome(options=options)
         driver.get(url=url)
-
         try:
             # Waits for element "body" for MAX_WAIT
             # script stops if element is not found
@@ -243,6 +243,18 @@ def convert_unix_time(unix_post_date: int):
 
 
 if __name__ == '__main__':
+    try:
+        db = "posts_data"
+        users = "users"
+        posts = "posts"
+        postgres = PostgreService()
+        connection_to_db = postgres.create_connection_to_db(db, user, password)
+        postgres.clean_table(posts)
+        postgres.clean_table(users)
+        connection_to_db.close()
+    except Exception as server_ex:
+        logging.error(server_ex)
+        sys.exit()
     site_url = "https://www.reddit.com/top/?t=month"
     count_records = 0
     posts_urls_done = []
@@ -262,7 +274,7 @@ if __name__ == '__main__':
                 if post_data:
                     posts_urls_done.append(post_data["post_url"])
                     json_data = json.dumps(post_data, indent=4,
-                                           ensure_ascii=False)
+                                           ensure_ascii=False).encode('utf8')
                     try:
                         re = requests.post("http://localhost:8087/posts/",
                                            data=json_data)
