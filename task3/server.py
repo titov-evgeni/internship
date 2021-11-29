@@ -104,7 +104,9 @@ class MyHandler(BaseHTTPRequestHandler):
                 all_data_by_id = {}
                 post_data_by_id = self.get_unique_data_from_db(posts,
                                                             {"_id": unique_id})
-                if post_data_by_id:
+                if post_data_by_id is None:
+                    return None
+                elif post_data_by_id:
                     all_data_by_id = self.get_user_data_from_db(post_data_by_id)
                 if all_data_by_id:
                     return all_data_by_id
@@ -293,6 +295,8 @@ class MyHandler(BaseHTTPRequestHandler):
                 result = self.get_data_from_db(unique_id)
                 if isinstance(result, dict):
                     self.write_response_with_data(409, {'error': 'wrong _id'})
+                elif result is None:
+                    self.write_response(404)
                 elif isinstance(result, str):
                     if len(post_data_dict) >= self.count_data_to_write:
                         data_for_db = self.verification_of_request_data(
