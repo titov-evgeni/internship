@@ -118,7 +118,6 @@ class PostgreService:
                 result = result[0]
             elif len(result) > 0:
                 result = "DATA NOT UNIQUE"
-            cursor.close()
             return result
 
     def insert_one(self, table: str,

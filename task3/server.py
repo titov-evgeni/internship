@@ -5,7 +5,6 @@ import json
 
 from typing import Union, List
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from psycopg2 import OperationalError
 
 from db_connectors.postgres import PostgreService
 import postgres_connect as connect
@@ -120,12 +119,8 @@ class MyHandler(BaseHTTPRequestHandler):
         try:
             if unique_id:
                 all_data_by_id = []
-                # try:
                 post_data_by_id = self.get_unique_data_from_db(posts, "id",
                                                                unique_id)
-
-                # except OperationalError:
-                #     raise Exception
                 if post_data_by_id is None:
                     return None
                 elif post_data_by_id:
@@ -136,10 +131,7 @@ class MyHandler(BaseHTTPRequestHandler):
                     return "No data by unique_id"
             else:
                 list_all_data_from_db = []
-                try:
-                    posts_data_from_db = postgres.find_all(posts)
-                except OperationalError:
-                    raise Exception
+                posts_data_from_db = postgres.find_all(posts)
                 for post_data in posts_data_from_db:
                     all_data_from_document = self.get_user_data_from_db(post_data)
                     list_all_data_from_db.append(all_data_from_document)
