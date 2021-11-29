@@ -1,14 +1,16 @@
-import db_connectors.postgres
+import db_connectors.postgres as connector
 
 
-def create_tables_postgresql(
-        postgres: db_connectors.postgres.PostgreService) -> None:
-    """Create tables in database"""
+def create_tables_postgresql(postgres: connector.PostgreService) -> None:
+    """Create tables in database
+
+    "postgres" - PostgreService class instance
+    """
 
     users_table = """
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
-          user_name VARCHAR(50) NULL UNIQUE,
+          user_name VARCHAR(50) NOT NULL UNIQUE,
           user_karma INT NOT NULL,
           user_cake_day VARCHAR(20) NOT NULL,
           post_karma INT NOT NULL,

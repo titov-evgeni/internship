@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',
 parser = argparse.ArgumentParser(description='Posts data from reddit '
                                              'to txt file')
 parser.add_argument('--posts_number', type=int,
-                    default=100,
+                    default=50,
                     help='Required number of posts')
 parser.add_argument('--file_name', type=str,
                     default=datetime.datetime.now().strftime('%Y%m%d%H%M'),
@@ -247,7 +247,7 @@ if __name__ == '__main__':
         db = "posts_data"
         users = "users"
         posts = "posts"
-        postgres = PostgreService()
+        postgres = PostgreService("127.0.0.1", 5432)
         connection_to_db = postgres.create_connection_to_db(db, user, password)
         postgres.clean_table(posts)
         postgres.clean_table(users)
