@@ -1,54 +1,84 @@
 from pymongo import MongoClient, database, collection
+from typing import List
 
 
 class MongodbService(object):
 
-    def __init__(self):
-        self.client = MongoClient("localhost", 27017)
+    def __init__(self, hostname, port):
+        self._hostname = hostname
+        self._port = port
+        self._client = MongoClient(self._hostname, self._port)
 
-    def create_db(self, db_name: str):
-        """Create data base for MongoClient"""
-        return self.client[db_name]
+    def create_db(self, db_name: str) -> database.Database:
+        """Create data base for MongoClient
 
-    def drop_db(self, db_name: str):
-        """Delete data base"""
-        self.client.drop_database(db_name)
+        "db_name" - database name
+        """
+        return self._client[db_name]
+
+    def drop_db(self, db_name: str) -> None:
+        """Delete data base
+
+        "db_name" - database name
+        """
+        self._client.drop_database(db_name)
 
     @staticmethod
-    def create_collection(db: database.Database, collection_name: str):
-        """Create collection in data base"""
-        return db[collection_name]
+    def create_collection(db_name: database.Database,
+                          collection_name: str) -> collection.Collection:
+        """Create collection in data base
+
+        "db_name" - database name
+        "collection_name" - collection name
+        """
+        return db_name[collection_name]
 
     @staticmethod
-    def insert_one(collection_name: collection.Collection, data: dict):
-        """Insert document into collection"""
-        return collection_name.insert_one(data)
+    def insert_one(collection_name: collection.Collection, data: dict) -> None:
+        """Insert document into collection
+
+        "collection_name" - collection name
+        "data" - data to insert into collection
+        """
+        collection_name.insert_one(data)
 
     @staticmethod
     def delete_one(collection_name: collection.Collection,
-                   search_filter: dict):
-        """Delete document from collection by filter"""
-        return collection_name.delete_one(search_filter)
+                   search_filter: dict) -> None:
+        """Delete document from collection by filter
+
+        "collection_name" - collection name
+        "search_filter" - filter to find document in the collection
+        """
+        collection_name.delete_one(search_filter)
 
     @staticmethod
     def update_one(collection_name: collection.Collection,
-                   search_filter: dict, new_values: dict):
-        """Update document fields in collection by filter"""
+                   search_filter: dict, new_values: dict) -> None:
+        """Update document fields in collection by filter
+
+        "collection_name" - collection name
+        "search_filter" - filter to find document in the collection
+        "new_values" - data to update in document
+        """
         collection_name.update_one(search_filter, {'$set': new_values})
 
     @staticmethod
-    def find(collection_name: collection.Collection):
+    def find(collection_name: collection.Collection) -> List[dict]:
         """Get all documents from collection
 
+        "collection_name" - collection name
         Return list of documents.
         """
         return list(collection_name.find())
 
     @staticmethod
     def find_one(collection_name: collection.Collection,
-                 search_filter: dict, *args):
+                 search_filter: dict, *args) -> dict:
         """Get single document from collection by filter
 
-        *args - necessary fields for output from document
+        "collection_name" - collection name
+        "search_filter" - filter to find document in the collection
+        "*args" - additional parameters for output from document
         """
         return collection_name.find_one(search_filter, *args)

@@ -47,7 +47,6 @@ GOOD_SCROLL_COUNT = 20
 USER_AGENT = ("Mozilla/5.0 (Windows NT 6.3; Win64; x64)"
               "AppleWebKit/537.36 (KHTML, like Gecko)"
               "Chrome/92.0.4515.159 Safari/537.36")
-mongo = MongodbService()
 
 
 def search_and_del_file_in_current_directory(search_mask: str):
@@ -245,6 +244,7 @@ def convert_unix_time(unix_post_date: int):
 
 if __name__ == '__main__':
     try:
+        mongo = MongodbService("localhost", 27017)
         mongo.drop_db("PostsData")
     except Exception as server_ex:
         logging.error(server_ex)
