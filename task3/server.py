@@ -19,6 +19,7 @@ try:
 except Exception:
     sys.exit()
 
+
 class MyHandler(BaseHTTPRequestHandler):
     """The main http handler, routes requests by path
     and calls appropriate methods."""
@@ -104,7 +105,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 all_data_by_id = {}
                 post_data_by_id = self.get_unique_data_from_db(posts,
                                                             {"_id": unique_id})
-                if post_data_by_id is None:
+                if isinstance(post_data_by_id, str):
                     return None
                 elif post_data_by_id:
                     all_data_by_id = self.get_user_data_from_db(post_data_by_id)
@@ -123,7 +124,8 @@ class MyHandler(BaseHTTPRequestHandler):
             self.write_response(500)
 
     def get_unique_data_from_db(self, collection_name: collection.Collection,
-                                search_filter: dict, *args) -> Union[dict, None]:
+                                search_filter: dict, *args) -> Union[dict, str,
+                                                                     None]:
         """Get unique data from collection by filter
 
         "collection_name" - collection name
@@ -133,9 +135,12 @@ class MyHandler(BaseHTTPRequestHandler):
         """
         try:
             unique_data = mongo.find_one(collection_name, search_filter, *args)
+            if isinstance(unique_data, str):
+                raise Exception
             return unique_data
         except Exception:
             self.write_response(500)
+            return "No connection"
 
     def get_user_data_from_db(self, post_data: dict) -> Union[dict, None]:
         """Get user data from data base by id for specific post.

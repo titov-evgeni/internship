@@ -81,4 +81,8 @@ class MongodbService(object):
         "search_filter" - filter to find document in the collection
         "*args" - additional parameters for output from document
         """
-        return collection_name.find_one(search_filter, *args)
+        try:
+            document = collection_name.find_one(search_filter, *args)
+            return document
+        except Exception:
+            return "No connection"
