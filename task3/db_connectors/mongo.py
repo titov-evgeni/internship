@@ -1,5 +1,5 @@
 from pymongo import MongoClient, database, collection
-from typing import List
+from typing import List, Union
 
 
 class MongodbService(object):
@@ -74,7 +74,7 @@ class MongodbService(object):
 
     @staticmethod
     def find_one(collection_name: collection.Collection,
-                 search_filter: dict, *args) -> dict:
+                 search_filter: dict, *args) -> Union[dict, str]:
         """Get single document from collection by filter
 
         "collection_name" - collection name
