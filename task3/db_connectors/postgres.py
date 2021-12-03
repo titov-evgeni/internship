@@ -2,21 +2,24 @@ import psycopg2
 import psycopg2.extensions
 from typing import Union, List
 
+from db_connectors.connector import Connector
 
-class PostgreService:
+
+class PostgreService(Connector):
     """Connect and process requests to the PostgreSQL database """
 
     def __init__(self, hostname, port):
-        self._hostname = hostname
-        self._port = port
+        super(PostgreService, self).__init__(hostname, port)
         self._connection = None
 
     def create_connection(self, user: str,
-                        password: str) -> psycopg2.extensions.connection:
+                          password: str) -> psycopg2.extensions.connection:
         """Create connection to PostgreSQL
 
         "user" - user name registered in Postgres
         "password" - user password
+        Return connection to PostgreSQL (psycopg2.extensions.connection
+        class instance).
         """
         try:
             self._connection = psycopg2.connect(user=user,
@@ -27,12 +30,14 @@ class PostgreService:
             return self._connection
 
     def create_connection_to_db(self, db_name: str, user: str,
-                            password: str) -> psycopg2.extensions.connection:
+                                password: str) -> psycopg2.extensions.connection:
         """Create connection to PostgreSQL database
 
         "db_name" - database name
         "user" - user name registered in Postgres
         "password" - user password
+        Return connection to database (psycopg2.extensions.connection
+        class instance).
         """
         try:
             self._connection = psycopg2.connect(database=db_name, user=user,
@@ -51,16 +56,6 @@ class PostgreService:
                         f"FROM pg_stat_activity WHERE pid <>"
                         f"pg_backend_pid( ) AND datname = %(db_name)s")
         self.execute_query(insert_query, search_condition)
-
-    def get_tables(self) -> List[tuple]:
-        """Get tables from the database
-
-        Return list of tables in tuple format.
-        """
-        insert_query = ("SELECT table_name FROM information_schema.tables "
-                        "WHERE table_schema NOT IN "
-                        "('information_schema','pg_catalog')")
-        return self.execute_read_query(insert_query)
 
     def clean_table(self, table) -> None:
         """Clean table in database
@@ -132,7 +127,8 @@ class PostgreService:
         insert_query = f"INSERT INTO {table} ({column_names}) VALUES {data}"
         self.execute_query(insert_query)
 
-    def delete(self, table: str, column: str, search_condition: dict) -> None:
+    def delete_one(self, table: str, column: str,
+                   search_value: dict) -> None:
         """Delete record from table by filter
 
         "table" - table name
@@ -140,23 +136,23 @@ class PostgreService:
         "search_condition" - column value
         """
         insert_query = f"DELETE FROM {table} WHERE {column} = %(value)s"
-        self.execute_query(insert_query, search_condition)
+        self.execute_query(insert_query, search_value)
 
-    def update(self, table: str, fields: Union[tuple, list], column: str,
-               search_condition: list) -> None:
+    def update_one(self, table: str, fields: Union[tuple, list], column: str,
+                   substitution_values: list) -> None:
         """Update record fields in table by filter
 
         "table" - table name
         "fields" - column names
         "column" - column name
-        "search_condition" - row values for update and column value
+        "substitution_values" - row values for update and column value
         """
         column_names = ", ".join(fields)
         data = ", ".join(["%s"] * len(fields))
         insert_query = (f"UPDATE {table} "
                         f"SET ({column_names}) = ({data}) "
                         f"WHERE {column} = %s")
-        self.execute_query(insert_query, search_condition)
+        self.execute_query(insert_query, substitution_values)
 
     def find_all(self, table: str) -> List[tuple]:
         """Get all values from table
@@ -167,8 +163,8 @@ class PostgreService:
         insert_query = f"SELECT * FROM {table}"
         return self.execute_read_query(insert_query)
 
-    def find_unique_data(self, table: str, column: str,
-                         search_condition: dict) -> Union[list, tuple, str]:
+    def find_one(self, table: str, column: str,
+                 search_condition: dict) -> Union[list, tuple, str]:
         """Get unique data from table by filter
 
         "table" - table name

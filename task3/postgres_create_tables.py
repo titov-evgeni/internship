@@ -1,7 +1,7 @@
-import db_connectors.postgres as connector
+import db_connectors.postgres as connect
 
 
-def create_tables_postgresql(postgres: connector.PostgreService) -> None:
+def create_tables_postgresql(postgres: connect.PostgreService) -> None:
     """Create tables in database
 
     "postgres" - PostgreService class instance

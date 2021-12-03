@@ -1,18 +1,19 @@
 import psycopg2.extensions
 
-import db_connectors.postgres as connector
+import db_connectors.postgres as connect
 from config import user, password
 import postgres_create_tables as tables
 
 
-def postgresql_create_connection_to_db(postgres: connector.PostgreService,
-                            db_name: str) -> psycopg2.extensions.connection:
+def postgresql_create_connection_to_db(postgres: connect.PostgreService,
+                                       db_name: str) -> psycopg2.extensions.connection:
     """Connect to PostgreSQL and connect to database.
 
     "postgres" - PostgreService class instance
     "db_name" - database name
     If there is no database, create it and connect.
-    Return connection to database.
+    Return connection to database (psycopg2.extensions.connection
+    class instance).
     """
     connection_to_db = postgres.create_connection_to_db(db_name, user,
                                                         password)

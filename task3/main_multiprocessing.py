@@ -28,13 +28,15 @@ from selenium.webdriver.support import expected_conditions as ec
 from db_connectors.postgres import PostgreService
 from config import user, password
 
-logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',
+logging.basicConfig(handlers=[logging.FileHandler(filename='app.log',
+                                                  mode='w', encoding='utf-8')],
+                    level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 parser = argparse.ArgumentParser(description='Posts data from reddit '
                                              'to txt file')
 parser.add_argument('--posts_number', type=int,
-                    default=50,
+                    default=10,
                     help='Required number of posts')
 parser.add_argument('--file_name', type=str,
                     default=datetime.datetime.now().strftime('%Y%m%d%H%M'),
@@ -247,10 +249,11 @@ if __name__ == '__main__':
         db = "posts_data"
         users = "users"
         posts = "posts"
-        postgres = PostgreService("127.0.0.1", 5432)
-        connection_to_db = postgres.create_connection_to_db(db, user, password)
-        postgres.clean_table(posts)
-        postgres.clean_table(users)
+        connector = PostgreService("127.0.0.1", 5432)
+        connection_to_db = connector.create_connection_to_db(db, user,
+                                                             password)
+        connector.clean_table(posts)
+        connector.clean_table(users)
         connection_to_db.close()
     except Exception as server_ex:
         logging.error(server_ex)
