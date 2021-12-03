@@ -1,9 +1,9 @@
 """Description of post and user arguments
-required to write to the data base"""
+required to write to the database"""
 
 
 class PostDataDB:
-    """Description of post arguments required to write to the data base"""
+    """Description of post arguments required to write to the database"""
     __slots__ = ("_id",
                  "post_url",
                  "post_date",
@@ -14,7 +14,7 @@ class PostDataDB:
 
 
 class UserDataDB:
-    """Description of user arguments required to write to the data base"""
+    """Description of user arguments required to write to the database"""
     __slots__ = ("user_name",
                  "user_karma",
                  "user_cake_day",
@@ -24,5 +24,5 @@ class UserDataDB:
 
 
 class AllData:
-    """All arguments required to write to the data base"""
+    """All arguments required to write to the database"""
     __slots__ = PostDataDB.__slots__ + UserDataDB.__slots__

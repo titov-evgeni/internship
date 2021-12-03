@@ -2,6 +2,7 @@
 appropriate methods"""
 import sys
 import json
+import logging
 
 from typing import Union, List
 from bson.objectid import ObjectId
@@ -11,12 +12,19 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from db_connectors.mongo import MongodbService
 from data_description import PostDataDB, UserDataDB, AllData
 
+logging.basicConfig(handlers=[logging.FileHandler(filename='server.log',
+                                                  mode='w', encoding='utf-8')],
+                    level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
 try:
-    mongo = MongodbService("localhost", 27017)
-    db = mongo.create_db('PostsData')
-    posts = mongo.create_collection(db, 'posts')
-    users = mongo.create_collection(db, 'users')
-except Exception:
+    db_name = 'posts_data'
+    connector = MongodbService("localhost", 27017)
+    db = connector.create_db(db_name)
+    posts = connector.create_collection(db, 'posts')
+    users = connector.create_collection(db, 'users')
+except Exception as server_ex:
+    logging.error(server_ex)
     sys.exit()
 
 
@@ -46,7 +54,7 @@ class MyHandler(BaseHTTPRequestHandler):
         """Check request data by "key" in AllData.__slots__
 
         "request_data" - all data passed in the request
-        Return "request_data" if data is correct.
+        Return "request_data" in dict format if data is correct.
         Return "None" if data is not correct.
         """
         count_request_data = 0
@@ -95,16 +103,17 @@ class MyHandler(BaseHTTPRequestHandler):
         """Sequence of actions to get data from data base
 
         "unique_id" - unique id of the document in the "posts" collection
-        Return all data by id if it was found.
-        Return "No data by unique_id" if post data by id was not found.
+        Return all data by id in dict format if it was found.
+        Return str "No data by unique_id" if post data by id was not found.
         Return list of posts and users data in dict format, if unique id
         was not found.
+        Return "None" if there is no connection to database server.
         """
         try:
             if unique_id:
                 all_data_by_id = {}
                 post_data_by_id = self.get_unique_data_from_db(posts,
-                                                            {"_id": unique_id})
+                                                               {"_id": unique_id})
                 if isinstance(post_data_by_id, str):
                     return None
                 elif post_data_by_id:
@@ -115,12 +124,13 @@ class MyHandler(BaseHTTPRequestHandler):
                     return "No data by unique_id"
             else:
                 list_all_data_from_db = []
-                posts_data_from_db = mongo.find(posts)
+                posts_data_from_db = connector.find_all(posts)
                 for post_data in posts_data_from_db:
                     all_data_from_document = self.get_user_data_from_db(post_data)
                     list_all_data_from_db.append(all_data_from_document)
                 return list_all_data_from_db
-        except Exception:
+        except Exception as ex:
+            logging.error(ex)
             self.write_response(500)
 
     def get_unique_data_from_db(self, collection_name: collection.Collection,
@@ -128,17 +138,21 @@ class MyHandler(BaseHTTPRequestHandler):
                                                                      None]:
         """Get unique data from collection by filter
 
-        "collection_name" - collection name
+        "collection_name" - pymongo.collection.Collection class instance
         "search_filter" - filter to find document in the collection
         "*args" - additional parameters for output from document
-        Return dict of post and user data.
+        Return unique data from collection in dict format.
+        Return str "No connection" if there is no connection
+        to database server.
         """
         try:
-            unique_data = mongo.find_one(collection_name, search_filter, *args)
+            unique_data = connector.find_one(collection_name, search_filter,
+                                             *args)
             if isinstance(unique_data, str):
                 raise Exception
             return unique_data
-        except Exception:
+        except Exception as ex:
+            logging.error(ex)
             self.write_response(500)
             return "No connection"
 
@@ -146,7 +160,8 @@ class MyHandler(BaseHTTPRequestHandler):
         """Get user data from data base by id for specific post.
 
         "post_data" - post data from "posts" collection
-        Return dict of post and user data.
+        Return post and user data in dict format.
+        Return "None" if there is no connection to database server.
         """
         try:
             all_data = {}
@@ -161,7 +176,8 @@ class MyHandler(BaseHTTPRequestHandler):
                 else:
                     self.write_response(404)
             return all_data
-        except Exception:
+        except Exception as ex:
+            logging.error(ex)
             self.write_response(500)
 
     def write_data_and_response(self, post_data: dict,
@@ -173,9 +189,10 @@ class MyHandler(BaseHTTPRequestHandler):
         "response_data" - request response data
         """
         try:
-            mongo.insert_one(posts, post_data)
+            connector.insert_one(posts, post_data)
             self.write_response_with_data(201, response_data)
-        except Exception:
+        except Exception as ex:
+            logging.error(ex)
             self.write_response(500)
 
     def process_new_user_data_from_PUT_request(self, new_post_data: dict,
@@ -190,7 +207,7 @@ class MyHandler(BaseHTTPRequestHandler):
         try:
             if "user_name" in new_user_data:
                 new_user_name = self.get_unique_data_from_db(users,
-                    {"user_name": new_user_data["user_name"]})
+                                    {"user_name": new_user_data["user_name"]})
                 if not new_user_name:
                     self.update_post_and_user_document(new_post_data,
                                                        new_user_data,
@@ -198,10 +215,10 @@ class MyHandler(BaseHTTPRequestHandler):
                 else:
                     self.write_response_with_data(400, {'error': 'user exists'})
             else:
-                self.update_post_and_user_document(new_post_data,
-                                                   new_user_data,
+                self.update_post_and_user_document(new_post_data, new_user_data,
                                                    unique_id)
-        except Exception:
+        except Exception as ex:
+            logging.error(ex)
             self.write_response(500)
 
     def update_post_and_user_document(self, new_post_data: dict,
@@ -215,28 +232,30 @@ class MyHandler(BaseHTTPRequestHandler):
         "unique_id" - unique id of the document in the "posts" collection
         """
         try:
-            mongo.update_one(users, {'_id': new_post_data["user_id"]},
-                             new_user_data)
+            connector.update_one(users, {'_id': new_post_data["user_id"]},
+                                 new_user_data)
             new_post_data.pop("user_id", None)
             if new_post_data:
-                mongo.update_one(posts, {'_id': unique_id}, new_post_data)
+                connector.update_one(posts, {'_id': unique_id}, new_post_data)
             self.write_response(200)
-        except Exception:
+        except Exception as ex:
+            logging.error(ex)
             self.write_response(500)
 
     def insert_user_data_to_db(self, data_for_db: dict) -> Union[dict, None]:
         """Sequence of actions to write down user data to data base
 
         "data_for_db" - all data passed in the request
-        Return dict of inserted user data.
+        Return inserted user data in dict format.
         """
         try:
             user_data = self.user_data_from_request_data(data_for_db)
-            mongo.insert_one(users, user_data)
+            connector.insert_one(users, user_data)
             user = self.get_unique_data_from_db(users,
-                                    {"user_name": data_for_db["user_name"]})
+                                                {"user_name": data_for_db["user_name"]})
             return user
-        except Exception:
+        except Exception as ex:
+            logging.error(ex)
             self.write_response(500)
 
     def do_GET(self):
@@ -253,7 +272,8 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.write_response_with_data(200, result)
                 else:
                     raise Exception
-            except Exception:
+            except Exception as ex:
+                logging.error(ex)
                 self.write_response(404)
         else:
             self.write_response_with_data(400, {'error': 'wrong path'})
@@ -268,19 +288,20 @@ class MyHandler(BaseHTTPRequestHandler):
                 result = self.get_data_from_db(unique_id)
                 if isinstance(result, dict):
                     post_content_by_id = self.get_unique_data_from_db(posts,
-                                                        {"_id": unique_id})
+                                                                      {"_id": unique_id})
                     user_id = post_content_by_id["user_id"]
-                    mongo.delete_one(posts, {"_id": unique_id})
+                    connector.delete_one(posts, {"_id": unique_id})
 
                     # Check to delete user data
                     post_content_by_user_id = self.get_unique_data_from_db(posts,
-                                                        {"user_id": user_id})
+                                                                           {"user_id": user_id})
                     if not post_content_by_user_id:
-                        mongo.delete_one(users, {"_id": user_id})
+                        connector.delete_one(users, {"_id": user_id})
                     self.write_response(200)
                 else:
                     self.write_response(404)
-            except Exception:
+            except Exception as ex:
+                logging.error(ex)
                 self.write_response(404)
         else:
             self.write_response_with_data(400, {'error': 'wrong path'})
@@ -304,26 +325,23 @@ class MyHandler(BaseHTTPRequestHandler):
                     self.write_response(404)
                 elif isinstance(result, str):
                     if len(post_data_dict) >= self.count_data_to_write:
-                        data_for_db = self.verification_of_request_data(
-                                                                post_data_dict)
+                        data_for_db = self.verification_of_request_data(post_data_dict)
                         if data_for_db:
                             try:
                                 user = self.get_unique_data_from_db(users,
-                                    {"user_name": data_for_db["user_name"]})
+                                        {"user_name": data_for_db["user_name"]})
                                 if not user:
                                     user = self.insert_user_data_to_db(data_for_db)
-                                post_data = self.post_data_from_request_data(
-                                                            data_for_db, user)
+                                post_data = self.post_data_from_request_data(data_for_db, user)
                                 self.write_data_and_response(post_data,
                                                              response_data)
-                            except Exception:
+                            except Exception as ex:
+                                logging.error(ex)
                                 self.write_response(500)
                         else:
-                            self.write_response_with_data(400,
-                                                    {'error': 'wrong data'})
+                            self.write_response_with_data(400, {'error': 'wrong data'})
                     else:
-                        self.write_response_with_data(400,
-                                                {'error': 'wrong data amount'})
+                        self.write_response_with_data(400, {'error': 'wrong data amount'})
             else:
                 self.write_response_with_data(400, {'error': 'wrong data'})
         else:
@@ -340,32 +358,32 @@ class MyHandler(BaseHTTPRequestHandler):
             new_unique_id = new_data_dict.get("_id")
             try:
                 if new_unique_id:
-                    self.write_response_with_data(400, {'error':
-                                                        "can't change _id"})
+                    self.write_response_with_data(400, {'error': "can't change _id"})
                 else:
                     unique_id = self.get_unique_id_from_request_path(self.path)
                     if unique_id:
                         old_post_data = self.get_data_from_db(unique_id)
                         if old_post_data:
                             user = self.get_unique_data_from_db(users,
-                                {"user_name": old_post_data["user_name"]})
-                            new_post_data = self.post_data_from_request_data(
-                                                        new_data_dict, user)
-                            new_user_data = self.user_data_from_request_data(
-                                                                new_data_dict)
+                                    {"user_name": old_post_data["user_name"]})
+                            new_post_data = self.post_data_from_request_data(new_data_dict,
+                                                                             user)
+                            new_user_data = self.user_data_from_request_data(new_data_dict)
                             if new_user_data:
-                                self.process_new_user_data_from_PUT_request(
-                                    new_post_data, new_user_data, unique_id)
+                                self.process_new_user_data_from_PUT_request(new_post_data,
+                                                                            new_user_data,
+                                                                            unique_id)
                             else:
                                 new_post_data.pop("user_id", None)
-                                mongo.update_one(posts, {'_id': unique_id},
-                                                 new_post_data)
+                                connector.update_one(posts, {'_id': unique_id},
+                                                     new_post_data)
                                 self.write_response(200)
                         else:
                             self.write_response(404)
                     else:
                         raise Exception
-            except Exception:
+            except Exception as ex:
+                logging.error(ex)
                 self.write_response(404)
         else:
             self.write_response_with_data(400, {'error': 'wrong path'})

@@ -27,14 +27,15 @@ from selenium.webdriver.support import expected_conditions as ec
 
 from db_connectors.mongo import MongodbService
 
-
-logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='w',
+logging.basicConfig(handlers=[logging.FileHandler(filename='app.log',
+                                                  mode='w', encoding='utf-8')],
+                    level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 parser = argparse.ArgumentParser(description='Posts data from reddit '
                                              'to txt file')
 parser.add_argument('--posts_number', type=int,
-                    default=100,
+                    default=10,
                     help='Required number of posts')
 parser.add_argument('--file_name', type=str,
                     default=datetime.datetime.now().strftime('%Y%m%d%H%M'),
@@ -244,8 +245,9 @@ def convert_unix_time(unix_post_date: int):
 
 if __name__ == '__main__':
     try:
-        mongo = MongodbService("localhost", 27017)
-        mongo.drop_db("PostsData")
+        db_name = 'posts_data'
+        connector = MongodbService("localhost", 27017)
+        connector.drop_db(db_name)
     except Exception as server_ex:
         logging.error(server_ex)
         sys.exit()
