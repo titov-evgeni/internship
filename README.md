@@ -9,8 +9,8 @@ in the 'Top' -> 'This Month' category.**
 
 **1. Install Chrome browser if necessary** 
 
-**2. Install PostgreSQL for your Platform if necessary**  
-(use site https://www.postgresql.org/download/)
+**2. Install MongoDB Community Server for your Platform if necessary**  
+(use site https://www.mongodb.com/try/download/community)
 
 **3. Download ChromeDriver for your Chrome browser version  
 (use site https://chromedriver.chromium.org/downloads or other)**  
@@ -24,9 +24,9 @@ in the 'Top' -> 'This Month' category.**
 
         move chromedriver.exe PATH\project
 
-**5. Set up PostgreSQL if necessary**
+**5. Run MongoDB Server**
 
-**6. Move to the project folder**  
+**6. Open new terminal window and move to the project folder**
 
 **7. Install venv if necessary:**
 - for Linux:
@@ -63,7 +63,7 @@ in the 'Top' -> 'This Month' category.**
 
         python task3/server.py
 
-**12. Open new terminal window and repeat the steps 6, 9**
+**12. Repeat the steps 6, 9**
 
 **13. Run script:**
 
@@ -71,7 +71,9 @@ in the 'Top' -> 'This Month' category.**
 
 **14. Stop RESTful server (Ctrl+C) in appropriate terminal window**
 
-**15. Deactivate virtual environment:**
+**15. Stop MongoDB Server in appropriate terminal window**
+
+**16. Deactivate virtual environment:**
 - for Linux:
 
         deactivate

@@ -25,8 +25,7 @@ from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
-from db_connectors.postgres import PostgreService
-from config import user, password
+from db_connectors.mongo import MongodbService
 
 logging.basicConfig(handlers=[logging.FileHandler(filename='app.log',
                                                   mode='w', encoding='utf-8')],
@@ -101,7 +100,7 @@ def get_data_from_post_and_user_page(url: str):
                                  [f'{user_id}']['created'])
         user_cake_day = convert_unix_time(int(unix_user_cake_day))
 
-        all_data = {"id": unique_id,
+        all_data = {"_id": unique_id,
                     "post_url": post_url,
                     "user_name": user_name,
                     "user_karma": user_karma,
@@ -246,15 +245,9 @@ def convert_unix_time(unix_post_date: int):
 
 if __name__ == '__main__':
     try:
-        db = "posts_data"
-        users = "users"
-        posts = "posts"
-        connector = PostgreService("127.0.0.1", 5432)
-        connection_to_db = connector.create_connection_to_db(db, user,
-                                                             password)
-        connector.clean_table(posts)
-        connector.clean_table(users)
-        connection_to_db.close()
+        db_name = 'posts_data'
+        connector = MongodbService("localhost", 27017)
+        connector.drop_db(db_name)
     except Exception as server_ex:
         logging.error(server_ex)
         sys.exit()

@@ -4,7 +4,7 @@ required to write to the database"""
 
 class PostDataDB:
     """Description of post arguments required to write to the database"""
-    __slots__ = ("id",
+    __slots__ = ("_id",
                  "post_url",
                  "post_date",
                  "number_of_comments",
