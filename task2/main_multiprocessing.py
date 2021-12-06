@@ -97,10 +97,18 @@ def get_data_from_post_and_user_page(url: str):
                                  [f'{user_id}']['created'])
         user_cake_day = convert_unix_time(int(unix_user_cake_day))
 
-        all_data = [unique_id, post_url, user_name, user_karma,
-                    user_cake_day, post_karma, comment_karma, post_date,
-                    number_of_comments, number_of_votes, post_category]
-
+        all_data = {"UNIQUE_ID": unique_id,
+                    "post_url": post_url,
+                    "user_name": user_name,
+                    "user_karma": user_karma,
+                    "user_cake_day": user_cake_day,
+                    "post_karma": post_karma,
+                    "comment_karma": comment_karma,
+                    "post_date": post_date,
+                    "number_of_comments": number_of_comments,
+                    "number_of_votes": number_of_votes,
+                    "post_category": post_category
+                    }
         return all_data
     except Exception as ex:
         logging.error(ex)
@@ -138,11 +146,11 @@ def make_request_selenium(url: str):
                 ec.presence_of_element_located((By.TAG_NAME, "body")))
             return driver
         except (AssertionError, WebDriverException):
+            driver.close()
+            driver.quit()
             raise Exception
     except Exception as ex:
         logging.error(ex)
-        driver.close()
-        driver.quit()
         sys.exit()
 
 
@@ -246,28 +254,34 @@ if __name__ == '__main__':
                                                   scroll_count)
 
     while count_records < COUNT_POSTS:
-
         with multiprocessing.Pool(multiprocessing.cpu_count()) as process:
             all_posts_data = process.map(get_data_from_post_and_user_page,
                                          all_posts_urls)
 
-            with open(f"reddit-{args.file_name}.txt", "a",
-                      encoding="utf-8-sig") as file:
-                for post_data in all_posts_data:
-                    if post_data:
-                        file.write(';'.join(post_data) + "\n")
-                        posts_urls_done.append(post_data[1])
+            for post_data in all_posts_data:
+                if post_data:
+                    posts_urls_done.append(post_data["post_url"])
+                    json_data = json.dumps(post_data, indent=4,
+                                           ensure_ascii=False)
+                    try:
+                        re = requests.post("http://localhost:8087/posts/",
+                                           data=json_data)
                         count_records += 1
+                    except Exception as server_ex:
+                        logging.error(server_ex)
+                        selenium_driver.close()
+                        selenium_driver.quit()
+                        sys.exit()
 
-                        if count_records == COUNT_POSTS:
-                            selenium_driver.close()
-                            selenium_driver.quit()
-                            sys.exit()
+                if count_records == COUNT_POSTS:
+                    selenium_driver.close()
+                    selenium_driver.quit()
+                    sys.exit()
 
             next_posts_urls = get_post_urls_from_main_page(selenium_driver,
                                                            scroll_count)
 
-            # # Select urls for which there was no request
+            # Select urls for which there was no request
             new_posts_urls = [x for x in next_posts_urls
                               if x not in posts_urls_done]
 
